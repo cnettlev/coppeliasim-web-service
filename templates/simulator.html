@@ -1,0 +1,21 @@
+ <center>
+      <br>
+      <img src="https://www.coppeliarobotics.com/images/coppelia-robotics-outlines3.svg" alt="" width="300">
+      <br>
+      <input type="button" id="startSimBtn" value="Iniciar" onclick="init()">
+      <p id="simStatus">Sin iniciar</p>
+      <select id="scene">
+		  <option value="scenes/lineTracer-threaded.ttt">Line Tracer</option>
+		  <option value="scenes/mouseTestScene.ttt">Mouse Test</option>
+		  <option value="scenes/khepera3.ttt">khepera3</option>
+	  </select>
+      <input type="button" value="Cambiar escenario" onclick="loadScene()">
+      <br>
+      <br>
+      <br>
+      <input type="image" src="{{ url_for('simulator.videoStream') }}" alt="simulator" width ="90%" onclick="changeView()">
+      <br>
+      <input type="button" value="Play/Pause" onclick="playPause()">
+      <input type="button" value="Stop" onclick="stop()">
+      <input type="button" value="Restart" onclick="restart()">
+</center>

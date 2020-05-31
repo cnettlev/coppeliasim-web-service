@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+  {% include 'head.html' %}
+  <style>
+    {% include 'css/style.css' %}
+    {% include 'css/xterm.css' %}
+  </style>
+
+  <body>
+    <div id="top" class="split content">
+        <div id="simluator" class="split content split-horizontal">
+            {% include 'simulator.html' %}
+        </div>
+        <div id="code-editor" class="split content split-horizontal">
+            {% include 'code_editor.html' %}
+        </div>
+    </div>
+    <div id="bottom" class="split content">
+      {% include 'terminal.html' %}
+    </div>
+    
+   </body>
+  {% include 'js.html' %}
+    
+</html>

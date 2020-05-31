@@ -1,0 +1,218 @@
+
+<script src="https://unpkg.com/xterm@3.6.0/dist/xterm.js"></script>
+<script src="https://unpkg.com/xterm@3.6.0/dist/addons/fit/fit.js"></script>
+<script src="https://unpkg.com/xterm@3.6.0/dist/addons/webLinks/webLinks.js"></script>
+<script src="https://unpkg.com/xterm@3.6.0/dist/addons/fullscreen/fullscreen.js"></script>
+<script src="https://unpkg.com/xterm@3.6.0/dist/addons/search/search.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.3.5/split.min.js"></script>
+
+   <script>
+
+    Split(['#simluator', '#code-editor'], {
+      sizes: [25, 75],
+      minSize: 300
+    });
+
+     Split(['#top', '#bottom'], {
+        cursor: 'pointer',
+        direction: 'vertical',
+      	sizes: [80, 20],
+    });
+
+    window.onload = function() {
+       $.ajax({
+       url: "{{ url_for ('simulator.shuffleLoading') }}",
+       type: "GET",
+       success: function(response) {
+          console.log(response);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+     }
+     });
+    }
+
+    function init() {
+      if (!document.getElementById("simStatus").innerHTML.includes("Corriendo"))  {
+
+         $.ajax({
+         url: "{{ url_for ('simulator.findAPort') }}",
+         type: "GET",
+         success: function(response) {
+            console.log(response);
+             if(response>1) {
+              var port = response; 
+              var cmd = "coppeliaSim -gREMOTEAPISERVERSERVICE_"+port+"_FALSE_TRUE -h &"
+
+              socket.emit("pty-input", {"input": "\n"+cmd+"\n"})
+
+               $.ajax({
+               url: "{{ url_for ('simulator.startStopSim') }}?port="+port,
+               type: "GET",
+               success: function(response) {
+                  console.log("Started??");
+                  console.log(response);
+                   if(response>=0) {
+                    document.getElementById("simStatus").innerHTML = "Corriendo!"; 
+                    document.getElementById("startSimBtn").value = "Detener"; 
+                    loadScene();
+                  }
+                  else {
+                    document.getElementById("simStatus").innerHTML = "Fuck!"; 
+                  }
+              },
+              error: function(xhr) {}
+             });
+            }
+          },
+          error: function(xhr) {}
+         });
+     }
+     else { // Trying to stop!
+      $.ajax({
+         url: "{{ url_for ('simulator.startStopSim') }}",
+         type: "GET",
+         success: function(response) {
+            console.log(response);
+            if (response>=0) {
+              document.getElementById("simStatus").innerHTML = "Simulador detenido"; 
+                    document.getElementById("startSimBtn").value = "Iniciar"; 
+            }
+            else {
+              document.getElementById("simStatus").innerHTML = "Double Fuck!"; 
+            }
+        },
+        error: function(xhr) {}
+       });
+     }
+    }
+
+
+    function loadScene() {
+      var scene = document.getElementById("scene").value;
+
+       $.ajax({
+       url: "{{ url_for ('simulator.loadScene') }}?scene="+scene,
+       type: "GET",
+       success: function(response) {
+          console.log(response);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+     }
+     });
+    }
+
+    function changeView() {
+       $.ajax({
+       url: "{{ url_for ('simulator.changeView') }}",
+       type: "GET",
+       success: function(response) {
+          console.log(response);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+     }
+     });
+    }
+
+    function stop() {
+       $.ajax({
+       url: "{{ url_for ('simulator.stop') }}",
+       type: "GET",
+       success: function(response) {
+          console.log(response);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+     }
+     });
+    }
+
+    function playPause() {
+       $.ajax({
+       url: "{{ url_for ('simulator.playPause') }}",
+       type: "GET",
+       success: function(response) {
+          console.log(response);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+     }
+     });
+    }
+
+    function restart() {
+       $.ajax({
+       url: "{{ url_for ('simulator.restart') }}",
+       type: "GET",
+       success: function(response) {
+          console.log(response);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+     }
+     });
+    }
+
+    // TERMINAL 
+    // **************
+
+	  Terminal.applyAddon(fullscreen)
+	  Terminal.applyAddon(fit)
+	  Terminal.applyAddon(webLinks)
+	  Terminal.applyAddon(search)
+	  const term = new Terminal({
+	        //cursorBlink: true,
+	        macOptionIsMeta: true,
+	        scrollback: false,
+	    });
+	  term.open(document.getElementById('terminal'));
+	  term.fit()
+	  term.resize(15, 50)
+	  console.log(`size: ${term.cols} columns, ${term.rows} rows`)
+	  // term.toggleFullScreen(true)
+	  term.fit()
+	  term.write("Awesome terminal from pyxterm.js, find the project at https://github.com/cs01/pyxterm.js")
+	  term.on('key', (key, ev) => {
+	    console.log("pressed key", key)
+	    console.log("event", ev)
+	    socket.emit("pty-input", {"input": key})
+	  });
+
+	  const socket = io.connect('/pty');
+	  const status = document.getElementById("status")
+
+	  socket.on("pty-output", function(data){
+	    console.log("new output", data)
+	    term.write(data.output)
+	  })
+
+	  socket.on("connect", () => {
+	    fitToscreen()
+	    status.innerHTML = '<span style="background-color: lightgreen;">connected</span>'
+	    }
+	  )
+
+	  socket.on("disconnect", () => {
+	    status.innerHTML = '<span style="background-color: #ff8383;">disconnected</span>'
+	  })
+
+	  function fitToscreen(){
+	    term.fit()
+	    socket.emit("resize", {"cols": term.cols, "rows": term.rows})
+	  }
+
+	  function debounce(func, wait_ms) {
+	    let timeout
+	    return function(...args) {
+	      const context = this
+	      clearTimeout(timeout)
+	      timeout = setTimeout(() => func.apply(context, args), wait_ms)
+	    }
+	  }
+
+	  const wait_ms = 50;
+	  window.onresize = debounce(fitToscreen, wait_ms)
+  </script>
